@@ -1,0 +1,9 @@
+{
+  "consumer_key": "69443-fd186550c2a7b6580c494d3b",
+  "redirect_url": "http://localhost:9000",
+  "api_endpoint": "https://getpocket.com/v3",
+  "code": "b8350179-c09e-203c-601a-eaa28b",
+  "token": "74a8fe37-70a2-44c2-bd85-4107eb",
+  "auth_url": "https://getpocket.com/auth/authorize?request_token=b8350179-c09e-203c-601a-eaa28b&redirect_uri=http://localhost:9000",
+  "code_valid": false
+}
