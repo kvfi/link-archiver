@@ -1,6 +1,8 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Duration, Instant, UNIX_EPOCH};
 
+use chrono::prelude::DateTime;
+use chrono::Utc;
 use format_sql_query::{QuotedData, Table};
 use log::{debug, error, info};
 use reqwest::{Client, StatusCode};
@@ -147,7 +149,10 @@ pub(crate) async fn code_is_valid(config: &mut Config) {
 pub(crate) async fn obtain_links(config: &Config) -> Result<(), reqwest::Error> {
     let payload = json!({
         "consumer_key": config.consumer_key,
-        "access_token": config.token
+        "access_token": config.token,
+        "sort": "newest",
+        "state": "all",
+        "count": u32::MAX
     });
 
     let request_url = format!("{}/get", config.api_endpoint);
@@ -181,6 +186,9 @@ pub(crate) fn store_db(links: &HashMap<String, LinkItemResponse>) {
 
     for (_, link) in links.iter() {
         let mut resolved_title = String::new();
+        let time_added_st = UNIX_EPOCH + Duration::from_secs(link.time_added.parse().unwrap());
+        let time_added = DateTime::<Utc>::from(time_added_st).format("%Y-%m-%d %H:%M:%S").to_string();
+
         match &link.resolved_title {
             None => error!("Could not resolve title."),
             Some(title) => {
@@ -190,7 +198,7 @@ pub(crate) fn store_db(links: &HashMap<String, LinkItemResponse>) {
 
         match connection.execute(format!(
             "INSERT INTO {} (resolved_title, item_id, time_added, url) VALUES ({}, {}, {}, {});",
-            Table("links".into()), QuotedData(&resolved_title), QuotedData(&link.item_id), QuotedData(&link.time_added), QuotedData(&link.given_url)
+            Table("links".into()), QuotedData(&resolved_title), QuotedData(&link.item_id), QuotedData(&time_added), QuotedData(&link.given_url)
         )) {
             Err(e) => {
                 error!("{}", e);
@@ -198,7 +206,7 @@ pub(crate) fn store_db(links: &HashMap<String, LinkItemResponse>) {
             }
             Ok(..) => {
                 db_storage_report.inserted = db_storage_report.inserted + 1;
-                info!("Alright!")
+                info!("Successfully added {}", resolved_title);
             }
         }
     }
