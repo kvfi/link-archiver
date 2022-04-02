@@ -23,6 +23,7 @@ struct Config {
     token: Option<String>,
     auth_url: Option<String>,
     code_valid: Option<bool>,
+    debug: Option<bool>,
 }
 
 error_chain! {
@@ -38,8 +39,8 @@ fn main() -> Result<()> {
     let config_filepath = Path::new(CONFIG_FILE_PATH);
 
     if config_filepath.exists() {
-        let mut config_content = fs::read_to_string(config_filepath)
-            .expect("Something went wrong reading the file");
+        let mut config_content =
+            fs::read_to_string(config_filepath).expect("Something went wrong reading the file");
         let mut config: Config = serde_json::from_str(&*config_content).unwrap();
 
         code_is_valid(&mut config);
@@ -52,7 +53,7 @@ fn main() -> Result<()> {
                         api::authorize_app(&mut config);
                         match api::obtain_request_token(&mut config) {
                             Ok(_) => println!("{}", "nice"),
-                            Err(e) => error!("{}", e)
+                            Err(e) => error!("{}", e),
                         }
                         config_content = serde_json::to_string_pretty(&config).unwrap();
                         let mut file = File::create(config_filepath)?;
@@ -65,14 +66,14 @@ fn main() -> Result<()> {
                             }
                         }
                     }
-                    None => error!("{}", "oh nooo")
-                }
+                    None => error!("{}", "oh nooo"),
+                },
             }
         } else {
             info!("{}", "Code is ok");
-            match api::obtain_links(config) {
+            match api::obtain_links(&config) {
                 Ok(_) => info!("Links stored successfully."),
-                Err(e) => error!("{}", e)
+                Err(e) => error!("{}", e),
             }
         }
     } else {
